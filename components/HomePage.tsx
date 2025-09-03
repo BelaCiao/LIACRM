@@ -110,6 +110,10 @@ const HomePage: React.FC<{ onStartQuiz: () => void }> = ({ onStartQuiz }) => {
     const [crmRef, isCrmVisible] = useAnimateOnScroll();
     const [ctaRef, isCtaVisible] = useAnimateOnScroll();
 
+    const whatsappNumber = '555399640159';
+    const whatsappMessage = "Olá Lia! Vi o site e adorei a proposta. Gostaria de saber mais sobre como você pode ajudar minha clínica.";
+    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`;
+
     useEffect(() => {
         if (isDemoVisible) {
             // Inicia a sequência de animação do chat quando a seção fica visível
@@ -139,7 +143,7 @@ const HomePage: React.FC<{ onStartQuiz: () => void }> = ({ onStartQuiz }) => {
                         Iniciar Diagnóstico Gratuito
                     </button>
                     <a 
-                        href="https://wa.me/555399640159" 
+                        href={whatsappUrl} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="w-full sm:w-auto bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-white/10 transition-all transform hover:scale-105"
@@ -241,7 +245,7 @@ const HomePage: React.FC<{ onStartQuiz: () => void }> = ({ onStartQuiz }) => {
                             Iniciar Diagnóstico Gratuito
                         </button>
                         <a 
-                            href="https://wa.me/555399640159" 
+                            href={whatsappUrl} 
                             target="_blank" 
                             rel="noopener noreferrer"
                             className="w-full sm:w-auto bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-white/10 transition-all transform hover:scale-105"
