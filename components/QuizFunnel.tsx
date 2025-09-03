@@ -103,25 +103,20 @@ const QuizFunnel: React.FC<QuizFunnelProps> = ({ onClose }) => {
         setIsSubmitting(true);
         setMessage(null);
         
-        // Em um ambiente Vite (usado pela Vercel para frontends modernos), 
-        // as variáveis de ambiente devem ser acessadas via import.meta.env e prefixadas com VITE_
-        // FIX: Cast `import.meta` to `any` to access Vite environment variables without TypeScript errors.
-        const CRM_API_URL = (import.meta as any).env.VITE_CRM_API_URL;
-        const CONTACT_EMAIL = (import.meta as any).env.VITE_CONTACT_EMAIL;
+        const CRM_API_URL = import.meta.env.VITE_CRM_API_URL;
+        const CONTACT_EMAIL = import.meta.env.VITE_CONTACT_EMAIL;
 
-        if (!CRM_API_URL) {
-            setMessage({ type: 'error', text: 'Erro de configuração. Contate o suporte.' });
+        if (!CRM_API_URL || !CONTACT_EMAIL) {
+            const missingVars = [];
+            if (!CRM_API_URL) missingVars.push('VITE_CRM_API_URL');
+            if (!CONTACT_EMAIL) missingVars.push('VITE_CONTACT_EMAIL');
+            
+            const errorText = `Erro Crítico de Build: Variável(eis) [${missingVars.join(', ')}] não injetada(s) no código. Verifique se o 'Framework Preset' está como 'Vite' nas configurações da Vercel e faça um novo deploy.`;
+            setMessage({ type: 'error', text: errorText });
             setIsSubmitting(false);
-            console.error("Erro Crítico: A variável de ambiente VITE_CRM_API_URL não está configurada no seu ambiente Vercel.");
+            console.error(errorText);
             return;
         }
-        if (!CONTACT_EMAIL) {
-            setMessage({ type: 'error', text: 'Erro de configuração. Contate o suporte.' });
-            setIsSubmitting(false);
-            console.error("Erro Crítico: A variável de ambiente VITE_CONTACT_EMAIL não está configurada no seu ambiente Vercel.");
-            return;
-        }
-
 
         const EMAIL_API_URL = `https://formsubmit.co/ajax/${CONTACT_EMAIL}`;
 
@@ -221,27 +216,27 @@ const QuizFunnel: React.FC<QuizFunnelProps> = ({ onClose }) => {
         
         if (step === quizSteps.length + 1) { // Form step
             return (
-                <div className="w-full max-w-md bg-base-100 p-8 rounded-xl shadow-2xl animate-fade-in-up mx-4">
+                <div className="w-full max-w-md bg-white p-8 rounded-xl shadow-2xl animate-fade-in-up mx-4">
                     <div className="text-center">
-                        <h1 className="text-3xl font-bold text-content-100">Demonstração Pronta!</h1>
-                        <p className="mt-2 text-content-200">Preencha seus dados para receber uma demonstração com o especialista.</p>
+                        <h1 className="text-3xl font-bold text-gray-900">Demonstração Pronta!</h1>
+                        <p className="mt-2 text-gray-600">Preencha seus dados para receber uma demonstração com o especialista.</p>
                     </div>
                     <form onSubmit={handleSubmit} className="mt-8 space-y-5">
                         <div className="relative">
-                            <label className="absolute -top-2 left-2 inline-block bg-base-100 px-1 text-xs font-medium text-content-200">Qual seu nome?</label>
-                            <input type="text" name="name" value={formData.name} onChange={handleInputChange} required className="w-full px-4 py-3 bg-transparent rounded-lg border-2 border-base-300 focus:ring-1 focus:ring-primary focus:outline-none focus:border-primary transition" placeholder="Digite seu nome..." />
+                            <label className="absolute -top-2 left-2 inline-block bg-white px-1 text-xs font-medium text-gray-500">Qual seu nome?</label>
+                            <input type="text" name="name" value={formData.name} onChange={handleInputChange} required className="w-full px-4 py-3 text-gray-900 bg-transparent rounded-lg border-2 border-gray-300 focus:ring-1 focus:ring-primary focus:outline-none focus:border-primary transition" placeholder="Digite seu nome..." />
                         </div>
                         <div className="relative">
-                            <label className="absolute -top-2 left-2 inline-block bg-base-100 px-1 text-xs font-medium text-content-200">Qual seu Whatsapp?</label>
-                            <input type="tel" name="whatsapp" value={formData.whatsapp} onChange={handleInputChange} required className="w-full px-4 py-3 bg-transparent rounded-lg border-2 border-base-300 focus:ring-1 focus:ring-primary focus:outline-none focus:border-primary transition" placeholder="Digite seu whatsapp..." />
+                            <label className="absolute -top-2 left-2 inline-block bg-white px-1 text-xs font-medium text-gray-500">Qual seu Whatsapp?</label>
+                            <input type="tel" name="whatsapp" value={formData.whatsapp} onChange={handleInputChange} required className="w-full px-4 py-3 text-gray-900 bg-transparent rounded-lg border-2 border-gray-300 focus:ring-1 focus:ring-primary focus:outline-none focus:border-primary transition" placeholder="Digite seu whatsapp..." />
                         </div>
                         <div className="relative">
-                            <label className="absolute -top-2 left-2 inline-block bg-base-100 px-1 text-xs font-medium text-content-200">@ do Instagram da sua Clínica</label>
-                            <input type="text" name="instagram" value={formData.instagram} onChange={handleInputChange} required className="w-full px-4 py-3 bg-transparent rounded-lg border-2 border-base-300 focus:ring-1 focus:ring-primary focus:outline-none focus:border-primary transition" placeholder="Digite seu instagram..." />
+                            <label className="absolute -top-2 left-2 inline-block bg-white px-1 text-xs font-medium text-gray-500">@ do Instagram da sua Clínica</label>
+                            <input type="text" name="instagram" value={formData.instagram} onChange={handleInputChange} required className="w-full px-4 py-3 text-gray-900 bg-transparent rounded-lg border-2 border-gray-300 focus:ring-1 focus:ring-primary focus:outline-none focus:border-primary transition" placeholder="Digite seu instagram..." />
                         </div>
                          <div className="relative">
-                            <label className="absolute -top-2 left-2 inline-block bg-base-100 px-1 text-xs font-medium text-content-200">Seu E-mail Profissional</label>
-                            <input type="email" name="email" value={formData.email} onChange={handleInputChange} required className="w-full px-4 py-3 bg-transparent rounded-lg border-2 border-base-300 focus:ring-1 focus:ring-primary focus:outline-none focus:border-primary transition" placeholder="Digite seu e-mail" />
+                            <label className="absolute -top-2 left-2 inline-block bg-white px-1 text-xs font-medium text-gray-500">Seu E-mail Profissional</label>
+                            <input type="email" name="email" value={formData.email} onChange={handleInputChange} required className="w-full px-4 py-3 text-gray-900 bg-transparent rounded-lg border-2 border-gray-300 focus:ring-1 focus:ring-primary focus:outline-none focus:border-primary transition" placeholder="Digite seu e-mail" />
                         </div>
                         <button type="submit" disabled={isSubmitting} className="w-full bg-brand-dark text-white px-6 py-3.5 rounded-lg text-lg font-bold hover:bg-gray-800 transition-all transform hover:scale-105 shadow-lg shadow-gray-500/20 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:scale-100">
                             {isSubmitting ? 'ENVIANDO...' : 'QUERO VER UMA DEMONSTRAÇÃO'}
@@ -281,7 +276,7 @@ const QuizFunnel: React.FC<QuizFunnelProps> = ({ onClose }) => {
     const isBgDark = isCurrentStepDark();
 
     return (
-        <div className={`fixed inset-0 z-[100] flex flex-col items-center justify-center transition-colors duration-500 ${isBgDark ? 'bg-brand-dark' : 'bg-base-200'} overflow-hidden`}>
+        <div className={`fixed inset-0 z-[100] flex flex-col items-center justify-center transition-colors duration-500 ${isBgDark ? 'bg-brand-dark' : 'bg-gray-100'} overflow-hidden`}>
             {isBgDark ? (
                 <ParticleBackground particleColor="rgba(255, 255, 255, 0.2)" lineColor="rgba(255, 255, 255, 0.1)" />
             ) : (
@@ -294,11 +289,11 @@ const QuizFunnel: React.FC<QuizFunnelProps> = ({ onClose }) => {
                         <div className="bg-white h-1.5 rounded-full transition-all duration-300" style={{ width: `${progress}%` }}></div>
                     </div>
                     {step > 0 && step <= quizSteps.length && !isLoading && (
-                        <button onClick={handleBack} className={`absolute top-8 left-6 p-2 rounded-full transition-colors ${isBgDark ? 'text-white hover:bg-white/10' : 'text-content-100 hover:bg-black/10'}`} aria-label="Voltar">
+                        <button onClick={handleBack} className={`absolute top-8 left-6 p-2 rounded-full transition-colors ${isBgDark ? 'text-white hover:bg-white/10' : 'text-gray-800 hover:bg-black/10'}`} aria-label="Voltar">
                             <BackArrowIcon />
                         </button>
                     )}
-                     <button onClick={onClose} className={`absolute top-8 right-6 p-2 rounded-full transition-colors text-2xl font-bold ${isBgDark ? 'text-white hover:bg-white/10' : 'text-content-100 hover:bg-black/10'}`} aria-label="Fechar">
+                     <button onClick={onClose} className={`absolute top-8 right-6 p-2 rounded-full transition-colors text-2xl font-bold ${isBgDark ? 'text-white hover:bg-white/10' : 'text-gray-800 hover:bg-black/10'}`} aria-label="Fechar">
                         &times;
                     </button>
                 </div>
@@ -307,7 +302,7 @@ const QuizFunnel: React.FC<QuizFunnelProps> = ({ onClose }) => {
                     {renderStepContent()}
                 </div>
 
-                <div className={`absolute bottom-4 text-xs ${isBgDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                <div className={`absolute bottom-4 text-xs ${isBgDark ? 'text-gray-400' : 'text-gray-600'}`}>
                     &copy; {new Date().getFullYear()} LIA IA CRM.
                 </div>
             </div>
