@@ -10,7 +10,7 @@ const ContactPage: React.FC = () => {
         setIsSubmitting(true);
         setSubmitMessage('');
 
-        const CONTACT_EMAIL = 'maicongn@hotmail.com'; // Hardcoded as per user request.
+        const CONTACT_EMAIL = import.meta.env.VITE_CONTACT_EMAIL;
 
         const form = e.currentTarget;
         const formData = new FormData(form);
@@ -18,6 +18,10 @@ const ContactPage: React.FC = () => {
         const formJson = Object.fromEntries(formData.entries());
 
         try {
+            if (!CONTACT_EMAIL) {
+                throw new Error("E-mail de contato não configurado.");
+            }
+            
             const response = await fetch(`https://formsubmit.co/ajax/${CONTACT_EMAIL}`, {
                 method: 'POST',
                 headers: {
