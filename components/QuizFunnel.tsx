@@ -103,14 +103,25 @@ const QuizFunnel: React.FC<QuizFunnelProps> = ({ onClose }) => {
         setIsSubmitting(true);
         setMessage(null);
         
-        const CRM_API_URL = process.env.CRM_API_URL;
-        const CONTACT_EMAIL = process.env.CONTACT_EMAIL;
+        // Em um ambiente Vite (usado pela Vercel para frontends modernos), 
+        // as variáveis de ambiente devem ser acessadas via import.meta.env e prefixadas com VITE_
+        // FIX: Cast `import.meta` to `any` to access Vite environment variables without TypeScript errors.
+        const CRM_API_URL = (import.meta as any).env.VITE_CRM_API_URL;
+        const CONTACT_EMAIL = (import.meta as any).env.VITE_CONTACT_EMAIL;
 
-        if (!CRM_API_URL || !CONTACT_EMAIL) {
+        if (!CRM_API_URL) {
             setMessage({ type: 'error', text: 'Erro de configuração. Contate o suporte.' });
             setIsSubmitting(false);
+            console.error("Erro Crítico: A variável de ambiente VITE_CRM_API_URL não está configurada no seu ambiente Vercel.");
             return;
         }
+        if (!CONTACT_EMAIL) {
+            setMessage({ type: 'error', text: 'Erro de configuração. Contate o suporte.' });
+            setIsSubmitting(false);
+            console.error("Erro Crítico: A variável de ambiente VITE_CONTACT_EMAIL não está configurada no seu ambiente Vercel.");
+            return;
+        }
+
 
         const EMAIL_API_URL = `https://formsubmit.co/ajax/${CONTACT_EMAIL}`;
 

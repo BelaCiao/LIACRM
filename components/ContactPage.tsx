@@ -10,11 +10,14 @@ const ContactPage: React.FC = () => {
         setIsSubmitting(true);
         setSubmitMessage('');
 
-        const CONTACT_EMAIL = process.env.CONTACT_EMAIL;
+        // Em ambientes Vite/Vercel, as variáveis de ambiente expostas ao cliente DEVEM começar com VITE_
+        // FIX: Cast `import.meta` to `any` to access Vite environment variables without TypeScript errors.
+        const CONTACT_EMAIL = (import.meta as any).env.VITE_CONTACT_EMAIL;
 
         if (!CONTACT_EMAIL) {
             setSubmitMessage('Erro de configuração: O e-mail de destino não foi definido.');
             setIsSubmitting(false);
+            console.error("Erro Crítico: A variável de ambiente VITE_CONTACT_EMAIL não está configurada.");
             return;
         }
 
