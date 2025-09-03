@@ -10,15 +10,7 @@ const ContactPage: React.FC = () => {
         setIsSubmitting(true);
         setSubmitMessage('');
 
-        const CONTACT_EMAIL = import.meta.env.VITE_CONTACT_EMAIL;
-
-        if (!CONTACT_EMAIL) {
-            const errorText = "Erro Crítico de Build: A variável 'VITE_CONTACT_EMAIL' não foi injetada no código. Verifique se o 'Framework Preset' está como 'Vite' nas configurações da Vercel e faça um novo deploy.";
-            setSubmitMessage(errorText);
-            setIsSubmitting(false);
-            console.error(errorText);
-            return;
-        }
+        const CONTACT_EMAIL = 'maicongn@hotmail.com'; // Hardcoded as per user request.
 
         const form = e.currentTarget;
         const formData = new FormData(form);
@@ -44,7 +36,11 @@ const ContactPage: React.FC = () => {
                 throw new Error(data.message || 'Falha ao enviar a mensagem.');
             }
         } catch (error: any) {
-            setSubmitMessage(`Ocorreu um erro. Por favor, tente novamente. (${error.message})`);
+            let errorMessage = `Ocorreu um erro. Por favor, tente novamente. (${error.message})`;
+            if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+                errorMessage = "Ocorreu um erro de comunicação. Por favor, verifique sua conexão com a internet e tente novamente.";
+            }
+            setSubmitMessage(errorMessage);
             console.error(error);
         } finally {
             setIsSubmitting(false);

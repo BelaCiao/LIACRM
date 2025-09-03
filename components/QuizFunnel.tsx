@@ -103,72 +103,69 @@ const QuizFunnel: React.FC<QuizFunnelProps> = ({ onClose }) => {
         setIsSubmitting(true);
         setMessage(null);
         
-        const CRM_API_URL = import.meta.env.VITE_CRM_API_URL;
-        const CONTACT_EMAIL = import.meta.env.VITE_CONTACT_EMAIL;
-
-        if (!CRM_API_URL || !CONTACT_EMAIL) {
-            const missingVars = [];
-            if (!CRM_API_URL) missingVars.push('VITE_CRM_API_URL');
-            if (!CONTACT_EMAIL) missingVars.push('VITE_CONTACT_EMAIL');
-            
-            const errorText = `Erro Crítico de Build: Variável(eis) [${missingVars.join(', ')}] não injetada(s) no código. Verifique se o 'Framework Preset' está como 'Vite' nas configurações da Vercel e faça um novo deploy.`;
-            setMessage({ type: 'error', text: errorText });
-            setIsSubmitting(false);
-            console.error(errorText);
-            return;
-        }
-
+        const CONTACT_EMAIL = 'maicongn@hotmail.com'; // Hardcoded as per user request
         const EMAIL_API_URL = `https://formsubmit.co/ajax/${CONTACT_EMAIL}`;
 
-        const crmPayload = {
-            name: formData.name,
-            email: formData.email,
-            phone: formData.whatsapp,
-            instagram: formData.instagram,
-            quizAnswers: answers,
-            source: 'Landing Page Quiz'
-        };
-
         try {
-            // Passo 1: Enviar para o CRM (ação crítica)
-            const crmResponse = await fetch(CRM_API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(crmPayload),
-            });
-            
-            if (!crmResponse.ok) {
-                const errorData = await crmResponse.json().catch(() => ({}));
-                throw new Error(errorData.error || `Falha ao criar lead no CRM (Status: ${crmResponse.status}).`);
-            }
-
-            // Passo 2: Enviar e-mail de notificação (ação secundária)
+            // Passo 1: Enviar e-mail de notificação (ação crítica para o usuário no momento)
             const emailPayload = {
                 ...formData,
                 _subject: `Novo Lead da Landing Page: ${formData.name}`,
                 'Respostas do Quiz': JSON.stringify(answers, null, 2)
             };
             
-            fetch(EMAIL_API_URL, {
+            const emailResponse = await fetch(EMAIL_API_URL, {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 },
                 body: JSON.stringify(emailPayload)
-            }).then(response => {
-                if (!response.ok) {
-                    console.warn('O lead foi criado no CRM, mas a notificação por e-mail falhou.');
-                }
-            }).catch(error => {
-                 console.error('Erro ao enviar notificação por e-mail:', error);
             });
+
+            if (!emailResponse.ok) {
+                const errorData = await emailResponse.json().catch(() => ({}));
+                throw new Error(errorData.message || 'Falha ao enviar notificação por e-mail.');
+            }
+            
+            // Passo 2: Enviar para o CRM (ação secundária, não bloqueante)
+            const CRM_API_URL = import.meta.env.VITE_CRM_API_URL;
+            if (CRM_API_URL) {
+                const crmPayload = {
+                    name: formData.name,
+                    email: formData.email,
+                    phone: formData.whatsapp,
+                    instagram: formData.instagram,
+                    quizAnswers: answers,
+                    source: 'Landing Page Quiz'
+                };
+
+                fetch(CRM_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(crmPayload),
+                }).then(response => {
+                    if (!response.ok) {
+                        console.warn(`O lead foi notificado por e-mail, mas o envio ao CRM falhou (Status: ${response.status}). O serviço de backend pode estar offline.`);
+                    } else {
+                        console.log("Lead enviado para o CRM com sucesso.");
+                    }
+                }).catch(error => {
+                     console.error('Erro ao tentar enviar lead para o CRM:', error);
+                });
+            } else {
+                console.warn("VITE_CRM_API_URL não está configurada. Pulando envio para o CRM, mas o e-mail foi enviado.");
+            }
 
             setMessage({ type: 'success', text: 'Dados recebidos com sucesso!' });
             setStep(step + 1);
 
         } catch (error: any) {
-            setMessage({ type: 'error', text: `Não foi possível enviar seus dados. Tente novamente. (${error.message})` });
+            let errorMessage = `Não foi possível enviar seus dados. Tente novamente. (${error.message})`;
+            if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+                errorMessage = "Não foi possível enviar seus dados. Verifique sua conexão ou contate o suporte (Erro de comunicação com o servidor - CORS).";
+            }
+            setMessage({ type: 'error', text: errorMessage });
         } finally {
             setIsSubmitting(false);
         }
