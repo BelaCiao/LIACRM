@@ -103,7 +103,18 @@ const QuizFunnel: React.FC<QuizFunnelProps> = ({ onClose }) => {
         setIsSubmitting(true);
         setMessage(null);
         
-        const payload = {
+        const CRM_API_URL = process.env.CRM_API_URL;
+        const CONTACT_EMAIL = process.env.CONTACT_EMAIL;
+
+        if (!CRM_API_URL || !CONTACT_EMAIL) {
+            setMessage({ type: 'error', text: 'Erro de configuração. Contate o suporte.' });
+            setIsSubmitting(false);
+            return;
+        }
+
+        const EMAIL_API_URL = `https://formsubmit.co/ajax/${CONTACT_EMAIL}`;
+
+        const crmPayload = {
             name: formData.name,
             email: formData.email,
             phone: formData.whatsapp,
@@ -113,21 +124,42 @@ const QuizFunnel: React.FC<QuizFunnelProps> = ({ onClose }) => {
         };
 
         try {
-            const response = await fetch('/api/leads', {
+            // Passo 1: Enviar para o CRM (ação crítica)
+            const crmResponse = await fetch(CRM_API_URL, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(payload),
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(crmPayload),
             });
             
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({})); // Try to parse error json
-                throw new Error(errorData.message || `Ocorreu um erro no servidor (Status: ${response.status}).`);
+            if (!crmResponse.ok) {
+                const errorData = await crmResponse.json().catch(() => ({}));
+                throw new Error(errorData.error || `Falha ao criar lead no CRM (Status: ${crmResponse.status}).`);
             }
 
+            // Passo 2: Enviar e-mail de notificação (ação secundária)
+            const emailPayload = {
+                ...formData,
+                _subject: `Novo Lead da Landing Page: ${formData.name}`,
+                'Respostas do Quiz': JSON.stringify(answers, null, 2)
+            };
+            
+            fetch(EMAIL_API_URL, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(emailPayload)
+            }).then(response => {
+                if (!response.ok) {
+                    console.warn('O lead foi criado no CRM, mas a notificação por e-mail falhou.');
+                }
+            }).catch(error => {
+                 console.error('Erro ao enviar notificação por e-mail:', error);
+            });
+
             setMessage({ type: 'success', text: 'Dados recebidos com sucesso!' });
-            setStep(step + 1); // Go to success screen
+            setStep(step + 1);
 
         } catch (error: any) {
             setMessage({ type: 'error', text: `Não foi possível enviar seus dados. Tente novamente. (${error.message})` });

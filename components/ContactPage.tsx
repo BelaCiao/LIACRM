@@ -5,11 +5,18 @@ const ContactPage: React.FC = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitMessage, setSubmitMessage] = useState('');
 
-
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setIsSubmitting(true);
         setSubmitMessage('');
+
+        const CONTACT_EMAIL = process.env.CONTACT_EMAIL;
+
+        if (!CONTACT_EMAIL) {
+            setSubmitMessage('Erro de configuração: O e-mail de destino não foi definido.');
+            setIsSubmitting(false);
+            return;
+        }
 
         const form = e.currentTarget;
         const formData = new FormData(form);
@@ -17,7 +24,7 @@ const ContactPage: React.FC = () => {
         const formJson = Object.fromEntries(formData.entries());
 
         try {
-            const response = await fetch('https://formsubmit.co/ajax/maicongn@hotmail.com', {
+            const response = await fetch(`https://formsubmit.co/ajax/${CONTACT_EMAIL}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
