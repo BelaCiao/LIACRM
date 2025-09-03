@@ -102,35 +102,40 @@ const QuizFunnel: React.FC<QuizFunnelProps> = ({ onClose }) => {
         e.preventDefault();
         setIsSubmitting(true);
         setMessage(null);
-        
-        const CONTACT_EMAIL = 'maicongn@hotmail.com'; // Hardcoded as per user request
-        const EMAIL_API_URL = `https://formsubmit.co/ajax/${CONTACT_EMAIL}`;
 
+        const CONTACT_EMAIL = 'maicongn@hotmail.com';
+        const EMAIL_API_URL = `https://formsubmit.co/ajax/${CONTACT_EMAIL}`;
+        const CRM_API_URL = import.meta.env.VITE_CRM_API_URL;
+
+        let emailSent = false;
+        let crmSent = false;
+
+        // --- Attempt 1: Send Email ---
         try {
-            // Passo 1: Enviar e-mail de notificação (ação crítica para o usuário no momento)
             const emailPayload = {
                 ...formData,
                 _subject: `Novo Lead da Landing Page: ${formData.name}`,
                 'Respostas do Quiz': JSON.stringify(answers, null, 2)
             };
-            
             const emailResponse = await fetch(EMAIL_API_URL, {
                 method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                 body: JSON.stringify(emailPayload)
             });
-
-            if (!emailResponse.ok) {
+            if (emailResponse.ok) {
+                emailSent = true;
+                console.log("Notificação por e-mail enviada com sucesso.");
+            } else {
                 const errorData = await emailResponse.json().catch(() => ({}));
-                throw new Error(errorData.message || 'Falha ao enviar notificação por e-mail.');
+                throw new Error(errorData.message || 'API do FormSubmit retornou um erro.');
             }
-            
-            // Passo 2: Enviar para o CRM (ação secundária, não bloqueante)
-            const CRM_API_URL = import.meta.env.VITE_CRM_API_URL;
-            if (CRM_API_URL) {
+        } catch (error) {
+            console.error("Falha ao enviar notificação por e-mail:", error);
+        }
+
+        // --- Attempt 2: Send to CRM ---
+        if (CRM_API_URL) {
+            try {
                 const crmPayload = {
                     name: formData.name,
                     email: formData.email,
@@ -139,37 +144,35 @@ const QuizFunnel: React.FC<QuizFunnelProps> = ({ onClose }) => {
                     quizAnswers: answers,
                     source: 'Landing Page Quiz'
                 };
-
-                fetch(CRM_API_URL, {
+                const crmResponse = await fetch(CRM_API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(crmPayload),
-                }).then(response => {
-                    if (!response.ok) {
-                        console.warn(`O lead foi notificado por e-mail, mas o envio ao CRM falhou (Status: ${response.status}). O serviço de backend pode estar offline.`);
-                    } else {
-                        console.log("Lead enviado para o CRM com sucesso.");
-                    }
-                }).catch(error => {
-                     console.error('Erro ao tentar enviar lead para o CRM:', error);
                 });
-            } else {
-                console.warn("VITE_CRM_API_URL não está configurada. Pulando envio para o CRM, mas o e-mail foi enviado.");
+                if (crmResponse.ok) {
+                    crmSent = true;
+                    console.log("Lead enviado para o CRM com sucesso.");
+                } else {
+                     throw new Error(`API do CRM retornou status ${crmResponse.status}`);
+                }
+            } catch (error) {
+                console.error("Falha ao enviar lead para o CRM:", error);
             }
-
+        } else {
+            console.warn("VITE_CRM_API_URL não está configurada. Pulando envio para o CRM.");
+        }
+        
+        // --- Finalize ---
+        if (emailSent || crmSent) {
             setMessage({ type: 'success', text: 'Dados recebidos com sucesso!' });
             setStep(step + 1);
-
-        } catch (error: any) {
-            let errorMessage = `Não foi possível enviar seus dados. Tente novamente. (${error.message})`;
-            if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-                errorMessage = "Não foi possível enviar seus dados. Verifique sua conexão ou contate o suporte (Erro de comunicação com o servidor - CORS).";
-            }
-            setMessage({ type: 'error', text: errorMessage });
-        } finally {
-            setIsSubmitting(false);
+        } else {
+            setMessage({ type: 'error', text: "Falha na comunicação. Não foi possível enviar seus dados. Por favor, tente novamente." });
         }
+
+        setIsSubmitting(false);
     };
+
 
     const renderStepContent = () => {
         if (step < quizSteps.length) {
